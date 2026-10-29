@@ -51,6 +51,7 @@ class File(StorageNode):
         self.data: str = ""
         self.isFavorite: bool = False
         self.ItemList: list[Item] = []
+        self.date_modified: str = ""  # Added date_modified attribute for sorting by date modified
 
     def getEntryType(self)->EntryType: 
         if (config.TEST_MODE): print(f"\nGetting entry type: {self.entryType}")
@@ -63,6 +64,10 @@ class File(StorageNode):
     def getData(self)->str: 
         if (config.TEST_MODE): print(f"\nGetting data: {self.data}")
         return self.data
+
+    def getDateModified(self)->str:
+        if (config.TEST_MODE): print(f"\nGetting date modified: {self.date_modified}")
+        return self.date_modified
 
     def getFavorite(self)->bool: 
         if (config.TEST_MODE): print(f"\nGetting favorite status: {self.isFavorite}")
@@ -93,6 +98,11 @@ class File(StorageNode):
         self.isFavorite = isFavorite
         if (config.TEST_MODE): print(f"Favorite status set to: {self.isFavorite}")
 
+    def setDateModified(self, date_modified: str):
+        if (config.TEST_MODE): print(f"\nSetting date modified: {date_modified}")
+        self.date_modified = date_modified
+        if (config.TEST_MODE): print(f"Date modified set to: {self.date_modified}")
+
     def deepCopy(self) -> File:
         duplicate = File()
         duplicate.setName(self.getName())
@@ -100,11 +110,12 @@ class File(StorageNode):
         duplicate.setEntryType(self.getEntryType())
         duplicate.setEntryNum(self.getEntryNum())
         duplicate.setFavorite(self.getFavorite())
+        duplicate.setDateModified(self.getDateModified())
         return duplicate
 
     def displayContents(self):
         if (config.TEST_MODE): print(f"\nDisplaying contents of file: {self.getName()}")
-        return self.entryType, self.entryNum, self.data, self.isFavorite, self.ItemList
+        return self.entryType, self.entryNum, self.data, self.isFavorite, self.ItemList, self.date_modified
 
 class Folder(StorageNode):
     def __init__(self, isLocked: bool = False):

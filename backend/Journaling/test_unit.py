@@ -12,6 +12,7 @@ from ItemActionHistory import ItemActionHistory
 from StorageManager import StorageManager
 from Command import AddItemCommand, EditItemCommand, DeleteItemCommand
 import StorageNode
+from Sorter import SortMetric, Sorter
 
 # PageManager Tests
 def test_AddItem():
@@ -187,15 +188,22 @@ def test_DuplicateFile():
 def test_DisplayAll():
     sM = StorageManager()
     folder = StorageNode.Folder()
+    folder.setName("Folder1")
     sM.Add(folder, sM.root)
     file = StorageNode.File()
+    file.setName("File1")
+    file1 = StorageNode.File()
+    file1.setName("File0")
     sM.Add(file, sM.root)
+    sM.Add(file1, sM.root)
 
-    sM.DisplayAll()  # This should display all contents of the root folder without errors
+
+    sM.DisplayAll(SortMetric.Filename)  # This should display all contents of the root folder without errors
 
 def test_DisplayFolder():
     sM = StorageManager()
     folder = StorageNode.Folder()
+    folder.setName("Folder1")
     sM.Add(folder, sM.root)
     file = StorageNode.File()
     file.setName("File")
@@ -207,7 +215,7 @@ def test_DisplayFolder():
     sM.Add(file, folder)
     sM.Add(file1, folder)
 
-    sM.DisplayFolder(folder)  # This should display all contents of the folder without errors
+    sM.DisplayFolder(folder, SortMetric.Filename)  # This should display all contents of the folder without errors
 
 def test_DisplayFile():
     sM = StorageManager()
@@ -218,12 +226,50 @@ def test_DisplayFile():
 
     sM.DisplayFile(file)  # This should display the contents of the file without errors
 ## Edge cases
+def test_DisplayAllFileName():
+    sM = StorageManager()
+    folder = StorageNode.Folder()
+    folder.setName("Folder1")
+    sM.Add(folder, sM.root)
+    file = StorageNode.File()
+    file.setName("File1")
+    file1 = StorageNode.File()
+    file1.setName("File2")
+    sM.Add(file, sM.root)
+    sM.Add(file1, sM.root)
+
+    sM.DisplayAll(SortMetric.Filename)  # This should display all contents of the root folder without errors
+def test_DisplayAllDateModified():
+    sM = StorageManager()
+    folder = StorageNode.Folder()
+    folder.setName("Folder1")
+    sM.Add(folder, sM.root)
+    file = StorageNode.File()
+    file.setName("File1")
+    sM.Add(file, sM.root)
+    file.setDateModified("2024-06-01")  # Set a date modified for sorting purposes
+
+    sM.DisplayAll(SortMetric.DateModified)  # This should display all contents of the root folder without errors
+
+def test_DisplayAllFavorite():
+    sM = StorageManager()
+    folder = StorageNode.Folder()
+    folder.setName("Folder1")
+    sM.Add(folder, sM.root)
+    file = StorageNode.File()
+    file.setName("File1")
+    file.setFavorite(True)  # Set the file as a favorite for sorting purposes
+    sM.Add(file, sM.root)
+
+    sM.DisplayAll(SortMetric.Favorite)  # This should display all contents of the root folder without errors
+
 
 def test_MoveToRoot():
     sM = StorageManager()
     folder = StorageNode.Folder()
     folder.setName("Folder")
     file = StorageNode.File()
+    file.setName("File1")
     sM.Add(file, folder)
 
     sM.Move(file, sM.root)
@@ -300,9 +346,11 @@ def test_MoveFromRoot():
     # Should be able to move files from the root folder
     sM = StorageManager()
     file = StorageNode.File()
+    file.setName("File1")
     sM.Add(file, sM.root)
 
     folder = StorageNode.Folder()
+    folder.setName("Folder1")
     sM.Add(folder, sM.root)
 
     sM.Move(file, folder)
@@ -609,3 +657,86 @@ def test_ItemActionHistory_Undo_EmptyStack():
     history.Undo()
 
     assert len(history.actionStack) == 0
+
+
+# Sorter
+
+def test_SortByMetric_Filename():
+    sorter = Sorter()
+    file1 = StorageNode.File()
+    file1.setName("zebra")
+    file2 = StorageNode.File()
+    file2.setName("apple")
+    folder = StorageNode.Folder()
+    folder.setName("a_folder")
+
+    result = sorter.SortByMetric([file1, file2, folder], SortMetric.Filename)
+
+    assert result == [folder, file2, file1]
+
+def test_SortByMetric_DateModified():
+    sorter = Sorter()
+    file_old = StorageNode.File()
+    file_old.setDateModified("2024-01-01")
+    file_new = StorageNode.File()
+    file_new.setDateModified("2024-06-01")
+    folder = StorageNode.Folder()
+
+    result = sorter.SortByMetric([file_new, folder, file_old], SortMetric.DateModified)
+
+    assert result == [folder, file_old, file_new]
+
+def test_SortByMetric_Favorite():
+    sorter = Sorter()
+    fav_file = StorageNode.File()
+    fav_file.setFavorite(True)
+    normal_file = StorageNode.File()
+    normal_file.setFavorite(False)
+    folder = StorageNode.Folder()
+
+    result = sorter.SortByMetric([normal_file, folder, fav_file], SortMetric.Favorite)
+
+    assert result == [folder, fav_file, normal_file]
+
+## Edge cases
+
+def test_SortByMetric_EmptyList():
+    sorter = Sorter()
+
+    result = sorter.SortByMetric([], SortMetric.Filename)
+
+    assert result == []
+
+def test_SortByMetric_InvalidMetricType():
+    # Passing something that isn't a SortMetric should raise a TypeError, not silently misbehave
+    sorter = Sorter()
+    file = StorageNode.File()
+
+    with pytest.raises(TypeError):
+        sorter.SortByMetric([file], "not_a_metric")
+
+def test_SortByMetric_DefaultsToFilenameWhenMetricNotProvided():
+    sorter = Sorter()
+    file1 = StorageNode.File()
+    file1.setName("zebra")
+    file2 = StorageNode.File()
+    file2.setName("apple")
+
+    result = sorter.SortByMetric([file1, file2])
+
+    assert result == [file2, file1]
+
+def test_SortByMetric_FoldersDoNotCrashOnFileOnlyMetrics():
+    # Folders have no date_modified or favorite concept, but sorting by those metrics should still be safe
+    sorter = Sorter()
+    folder1 = StorageNode.Folder()
+    folder2 = StorageNode.Folder()
+    file = StorageNode.File()
+    file.setDateModified("2024-01-01")
+    file.setFavorite(True)
+
+    date_result = sorter.SortByMetric([file, folder1, folder2], SortMetric.DateModified)
+    favorite_result = sorter.SortByMetric([file, folder1, folder2], SortMetric.Favorite)
+
+    assert date_result[-1] == file
+    assert favorite_result[-1] == file

@@ -4,6 +4,7 @@ StorageManager.py
 '''
 import config
 from StorageNode import StorageNode, File, Folder
+from Sorter import Sorter, SortMetric
 
 class StorageManager:
     def __init__(self): 
@@ -32,22 +33,36 @@ class StorageManager:
         self.Add(self.entryRootM, self.subroot)
         self.Add(self.entryRootW, self.subroot)
         self.Add(self.entryRootD, self.subroot)
+
+        self.sorter = Sorter()
         
-    def DisplayAll(self): 
+        
+    def DisplayAll(self, metric: SortMetric): 
+        if not isinstance(metric, SortMetric):
+            raise TypeError(f"metric must be a SortMetric, got {type(metric).__name__}")
+
         if (config.TEST_MODE): print(f"\n====== StorageManager.DisplayAll ======")
         if (config.TEST_MODE): print(f"Displaying all contents of the root folder...")
-        self.DisplayFolder(self.root)
+
+        self.sorter.SortByMetric(self.root.children, metric)
+
+        self.DisplayFolder(self.root, metric)
         if (config.TEST_MODE): print(f"====== End StorageManager.DisplayAll ======\n")
 
     # Recursive function to display all contents of a folder.
-    def DisplayFolder(self, folder: Folder):
+    def DisplayFolder(self, folder: Folder, metric: SortMetric):
+        if not isinstance(metric, SortMetric):
+            raise TypeError(f"metric must be a SortMetric, got {type(metric).__name__}")
+            
+        self.sorter.SortByMetric(folder.children, metric)
+
         if (config.TEST_MODE): print(f"\n====== StorageManager.DisplayFolder ======")
         if (config.TEST_MODE): print(f"Displaying folder: {folder}...")
         if (config.TEST_MODE): print(f"Folder: {folder}\n, name: {folder.getName()}\n, parent: {folder.getParent()}")
 
         for child in folder.children:
             if (isinstance(child, Folder)):
-                self.DisplayFolder(child)
+                self.DisplayFolder(child, metric)
             else:
                 if (config.TEST_MODE): print(f"File: {child}\n, name: {child.getName()}\n, parent: {child.getParent()}")
 
