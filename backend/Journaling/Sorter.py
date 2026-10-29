@@ -4,7 +4,7 @@ Sorter.py
 '''
 from enum import Enum
 import config
-from StorageNode import File, Folder
+from StorageNode import StorageNode, File, Folder
 
 class SortMetric(Enum):
     Filename = 1    # foldername (name) or filename(date)
@@ -17,7 +17,9 @@ class Sorter():
         self.metric: SortMetric = SortMetric(1)
         if (config.TEST_MODE): print(f"Sorter initialized with metric: {self.metric}")
 
-    def SortByMetric(self, nodes: list, metric: SortMetric = None):
+    # nodes: a collection of File and Folder objects to be sorted by the specified metric. 
+    # The collection is usually through a StorageNode folder's children or similar structure.
+    def SortByMetric(self, nodes: list[StorageNode], metric: SortMetric = None) -> list[StorageNode]:
         if metric is None:
             metric = SortMetric(1)
 
