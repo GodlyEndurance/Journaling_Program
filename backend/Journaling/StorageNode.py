@@ -152,4 +152,9 @@ class Folder(StorageNode):
         self.children.clear()
         if (config.TEST_MODE): print(f"Folder {self.name} deleted")
 
+    def getChildren(self):
+        if (config.TEST_MODE): print(f"\nGetting children of folder {self.name}")
+        return self.children
+        
+
 

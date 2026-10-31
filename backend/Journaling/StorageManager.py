@@ -2,6 +2,7 @@
 StorageManager.py
 
 '''
+import re
 import config
 from StorageNode import StorageNode, File, Folder
 from Sorter import Sorter, SortMetric
@@ -235,8 +236,39 @@ class StorageManager:
             return
 
         duplicate = file.deepCopy()
+        duplicate = self.remakeDuplicateName(duplicate, folder)
 
         self.Add(duplicate, folder)
         if (config.TEST_MODE): print(f"File duplicated: {duplicate} to folder: {folder}")
         if (config.TEST_MODE): print(f"====== End StorageManager.DuplicateFile ======\n")
+
+    # PRIVATE - Helper functions
+
+    # Uniqueness property of file names
+    def remakeDuplicateName(self, file: File, folder: Folder):
+        duplicate = file
+        original_name = duplicate.getName()
+        existing_names = {child.getName() for child in folder.getChildren()}
+
+        if original_name not in existing_names:
+            if (config.TEST_MODE): print(f"No duplicate name found for: {original_name} in folder: {folder}")
+            return duplicate
+
+        if (config.TEST_MODE): print(f"Duplicate name found: {original_name} in folder: {folder}")
+
+        # If the name already ends with "_copyN", pull out N and resume counting
+        # from N + 1 instead of stacking another "_copy1" onto an already-copied name.
+        match = re.match(r"^(.*)_copy(\d+)$", original_name)
+        if match:
+            base_name, counter = match.group(1), int(match.group(2)) + 1
+        else:
+            base_name, counter = original_name, 1
+
+        new_name = f"{base_name}_copy{counter}"
+        while new_name in existing_names:
+            counter += 1
+            new_name = f"{base_name}_copy{counter}"
+
+        duplicate.setName(new_name)
+        return duplicate
     
